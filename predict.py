@@ -1,3 +1,4 @@
+import random
 import tempfile
 import numpy as np
 import torch
@@ -24,7 +25,7 @@ class Predictor(BasePredictor):
     def setup(self):
 
         config_file = "configs/stable-diffusion/v1-inference.yaml"
-        checkpoint = "models/ldm/stable-diffusion-v1/sd-v1-3-full-ema.ckpt"
+        checkpoint = "models/ldm/stable-diffusion-v1/sd-v1-4.ckpt"
 
         config = OmegaConf.load(config_file)
         self.model = load_model_from_config(config, checkpoint)
@@ -43,7 +44,7 @@ class Predictor(BasePredictor):
             description="The prompt to render.",
         ),
         n_samples: int = Input(
-            default=8,
+            default=1,
             ge=1,
             le=16,
             description="Number of samples generated.",
@@ -65,16 +66,19 @@ class Predictor(BasePredictor):
             description="Whether use plms sampling.",
         ),
         seed: int = Input(
-            default=42,
             description="The seed (for reproducible sampling).",
+            default=None,
         ),
     ) -> List[ModelOutput]:
+        if seed is None:
+            seed = random.randint(0, 2 ** 32 - 1)
+        print("Using seed {}. Enter this in 'seed' if you want to produce the same output again!".format(seed))
 
         seed_everything(seed)
 
         # use the default setting for the following params for the demo
         # n_samples = 8
-        n_iter = 2  # sample this often
+        n_iter = 1  # sample this often
         C = 4  # latent channels
         f = 8  # downsampling factor, most often 8 or 16
         H = 512  # image height, in pixel space
